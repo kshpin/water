@@ -1,4 +1,4 @@
-.gitignore
 .vscode
 .env
 __pycache__
+sandbox.py
