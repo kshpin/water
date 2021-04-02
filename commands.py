@@ -2,13 +2,12 @@
 Implements bot functionality.
 """
 
-import discord
-from discord.ext.commands import Bot, Cog, Context, command
-
-import requests
-import aiohttp
-
 from pprint import pprint
+
+import discord
+from discord.ext.commands import Bot, Cog, Context, MinimalHelpCommand, command
+
+import aiohttp
 
 def setup(bot: Bot):
     """
@@ -17,13 +16,25 @@ def setup(bot: Bot):
 
     bot.add_cog(Commands(bot))
 
+class HelpCommand(MinimalHelpCommand):
+    """
+    Help command override class.
+    """
+
+    def get_command_signature(self, comm):
+        """
+        Returns the string describing a command.
+        """
+
+        return "{0.clean_prefix}{1.qualified_name} {1.signature}".format(self, comm)
+
 class Commands(Cog):
     """
     The bot class, implements all its functionality.
     """
 
-    def __init__(self, b: Bot):
-        self.bot = b
+    def __init__(self, bot: Bot):
+        self.bot = bot
 
     @command(name="ping")
     async def ping(self, ctx: Context):
@@ -48,24 +59,14 @@ class Commands(Cog):
         """
 
         payload = {
-            #"per_page": "1",
-            #"page": "1",
-            "q": text #"tetris+language:assembly&sort=stars&order=desc"
+            "per_page": "1",
+            "page": "1",
+            "q": text
         }
 
-        r = requests.get("https://api.github.com/search/repositories", params=payload).json()
-        await ctx.send(r["items"][0]["html_url"])
-
-        '''
-        async def on_request_end(session, trace_ctx, params):
-            print("Starting %s request for %s. I will send: %s" % (params.method, params.url, params.headers))
-
-        trace_config = aiohttp.TraceConfig()
-        trace_config.on_request_end.append(on_request_end)
-
         error = False
-        async with aiohttp.ClientSession(trace_configs=[trace_config]) as session:
-            async with session.get("https://api.github.com/search/repositories", headers=payload) as resp:
+        async with aiohttp.ClientSession() as session:
+            async with session.get("https://api.github.com/search/repositories", params=payload) as resp:
                 if resp.status != 200:
                     await ctx.send(f"error code: {resp.status}")
                     pprint(await resp.json())
@@ -73,8 +74,7 @@ class Commands(Cog):
                 r = await resp.json()
 
         if not error:
-            await ctx.send(r.items[0].html_url)
-        '''
+            await ctx.send(r["items"][0]["html_url"])
 
 
     @command(name="shork!")
